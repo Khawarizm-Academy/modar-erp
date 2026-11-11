@@ -97,3 +97,4 @@ button:disabled{cursor:not-allowed;opacity:.65}
  .report-close{display:none!important}
  .invoice-paper{display:block!important;position:absolute;inset:0 auto auto 0;width:100%;padding:36px;background:white;color:#111;direction:rtl}
 }
+@media(max-width:760px){.profile{display:flex;gap:6px}.profile-copy{display:none}.profile-avatar{width:34px;height:34px;flex-basis:34px}}
