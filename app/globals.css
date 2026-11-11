@@ -98,3 +98,51 @@ button:disabled{cursor:not-allowed;opacity:.65}
  .invoice-paper{display:block!important;position:absolute;inset:0 auto auto 0;width:100%;padding:36px;background:white;color:#111;direction:rtl}
 }
 @media(max-width:760px){.profile{display:flex;gap:6px}.profile-copy{display:none}.profile-avatar{width:34px;height:34px;flex-basis:34px}}
+
+
+/* Dashboard charts and balanced workspace spacing */
+.content{padding:30px 36px 42px;max-width:1580px}
+.page-heading{margin-bottom:26px;align-items:center}
+.metrics{gap:18px;margin-bottom:22px}
+.metric{padding:20px 21px;min-height:145px;box-shadow:0 3px 14px #17363c05}
+.metric-value{font-size:27px;letter-spacing:-.5px}
+.dashboard-charts{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,1fr);gap:18px;margin:0 0 22px}
+.chart-panel{padding:22px 23px;min-height:300px;box-shadow:0 3px 14px #17363c05}
+.chart-period{background:#f1f7f6;color:#4b7771;border-radius:20px;padding:6px 11px;font-size:11px;white-space:nowrap}
+.chart-legend{justify-content:flex-start;gap:18px;margin:3px 0 15px}
+.chart-legend>span{display:flex;align-items:center;gap:5px}
+.legend-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin:0}
+.sales-dot{background:#087f70}.expense-dot{background:#e4ad59}.pending-dot{background:#e4ad59}.late-dot{background:#d96a62}.other-dot{background:#8a9ba0}
+.bar-chart{height:174px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:13px;align-items:end;border-bottom:1px solid #e9eff0;padding:12px 5px 0}
+.bar-month{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:9px;min-width:0}
+.bar-pair{height:100%;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:6px}
+.bar{display:block;width:min(22px,35%);min-height:3px;border-radius:6px 6px 2px 2px;transition:height .35s ease;box-shadow:0 2px 6px #17363c0c}
+.bar.sales-bar{background:linear-gradient(180deg,#38aa98,#087f70)}
+.bar.expense-bar{background:linear-gradient(180deg,#f0c77f,#d99b42)}
+.bar-month small{font-size:11px;color:#718488;white-space:nowrap}
+.invoice-chart-body{display:flex;align-items:center;justify-content:center;gap:25px;min-height:190px}
+.donut-chart{width:156px;height:156px;flex:0 0 156px;border-radius:50%;display:grid;place-items:center;position:relative;filter:drop-shadow(0 5px 10px #17363c0b)}
+.donut-hole{width:105px;height:105px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px #edf1f2}
+.donut-hole b{font:700 29px Inter,Tajawal,sans-serif;color:#17363c}
+.donut-hole span{font-size:11px;color:#718488}
+.invoice-legend{display:grid;gap:14px;min-width:125px}
+.invoice-legend>div{display:grid;grid-template-columns:10px 1fr auto;align-items:center;gap:8px;font-size:12px;color:#64787d}
+.invoice-legend .legend-dot{width:9px;height:9px}
+.invoice-legend b{color:#17363c;font:700 13px Inter,Tajawal,sans-serif}
+.chart-empty-note{font-size:11px;color:#819196;text-align:center;margin-top:10px}
+.support-compact{padding:13px 14px;margin-bottom:16px}
+.support-compact b{font-size:13px}
+.support-compact p{margin:5px 0 8px;font-size:11px;line-height:1.6}
+.support-status{display:flex;align-items:center;gap:6px;color:#a9d9ce;font-size:10px}
+.support-status i{width:6px;height:6px;border-radius:50%;background:#5bd0a9;box-shadow:0 0 0 3px #5bd0a91c}
+.sidebar{padding:24px 15px}
+.brand{padding-bottom:22px}
+.company{margin-bottom:22px}
+.nav-list{gap:5px}
+.nav-item{padding:11px 12px}
+.sidebar-foot{font-size:10px;line-height:1.7}
+.lower-grid{gap:18px}
+.panel{box-shadow:0 3px 14px #17363c05}
+@media(max-width:1100px){.dashboard-charts{grid-template-columns:1fr 1fr}.invoice-chart-body{gap:12px}.donut-chart{width:135px;height:135px;flex-basis:135px}.donut-hole{width:91px;height:91px}.invoice-legend{min-width:110px}}
+@media(max-width:760px){.content{padding:20px 15px 30px}.page-heading{margin-bottom:20px}.metrics{gap:10px;margin-bottom:14px}.metric{min-height:126px;padding:15px}.dashboard-charts{grid-template-columns:1fr;gap:12px;margin-bottom:14px}.chart-panel{padding:17px;min-height:unset}.bar-chart{height:150px;gap:7px}.invoice-chart-body{min-height:165px;gap:25px}.lower-grid{gap:12px}.sidebar{padding:22px 15px}}
+@media(max-width:420px){.invoice-chart-body{gap:14px}.donut-chart{width:122px;height:122px;flex-basis:122px}.donut-hole{width:83px;height:83px}.invoice-legend{min-width:108px;gap:11px}.chart-panel .panel-head h2{font-size:16px}.chart-panel .panel-head p{font-size:11px}.chart-period{font-size:10px;padding:5px 8px}}
