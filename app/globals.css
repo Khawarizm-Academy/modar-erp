@@ -91,8 +91,9 @@ button:disabled{cursor:not-allowed;opacity:.65}
  body{background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
  body *{visibility:hidden!important}
  .report-paper,.report-paper *{visibility:visible!important}
- .report-paper{display:block!important;position:absolute;inset:0 auto auto 0;width:100%;padding:0;background:#fff;color:#17363c;font-family:'Tajawal',Arial,sans-serif;direction:rtl}
+ .invoice-paper,.invoice-paper *{visibility:visible!important}
+ .report-paper{display:block!important;position:absolute;inset:0 auto auto 0;width:100%;padding:0;background:#fff;color:#17363c;font-family:Arial,sans-serif;direction:rtl}
  .report-cover,.report-kpis>div,.report-section{break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
  .report-close{display:none!important}
- .invoice-paper{display:none!important}
+ .invoice-paper{display:block!important;position:absolute;inset:0 auto auto 0;width:100%;padding:36px;background:white;color:#111;direction:rtl}
 }
