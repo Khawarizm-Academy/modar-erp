@@ -1,83 +1,98 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { LayoutDashboard, Wallet, ShoppingCart, Package, Users, ChartNoAxesCombined, Settings, Search, Bell, Plus, Menu, X, ArrowUpRight, ChevronDown, Download, MoreHorizontal, CircleHelp } from "lucide-react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useEffect, useMemo, useState } from "react";
+import { LayoutDashboard, Wallet, ShoppingCart, Package, Users, ChartNoAxesCombined, Settings, Search, Bell, Plus, Menu, X, Download, Pencil, Trash2, Printer, FileText, UserRound, TrendingUp, Boxes, Receipt, Save, Eye } from "lucide-react";
 
-type Row = { id: string; name: string; amount: string; status: string };
+type Kind = "sales" | "inventory" | "customers" | "expenses" | "hr";
+type RecordItem = { id:string; name:string; detail:string; amount:number; qty:number; status:string; date:string };
+type Store = Record<Kind, RecordItem[]>;
+const STORAGE_KEY = "modar-erp-store-v2";
+const today = () => new Date().toISOString().slice(0,10);
+const seed:Store = {
+  sales:[
+    {id:"INV-1001",name:"شركة النخبة",detail:"خدمات استشارية",amount:12500,qty:1,status:"مدفوعة",date:today()},
+    {id:"INV-1002",name:"مؤسسة الرواد",detail:"توريد أجهزة",amount:8750,qty:1,status:"بانتظار الدفع",date:today()},
+    {id:"INV-1003",name:"شركة المسار",detail:"اشتراك سنوي",amount:16200,qty:1,status:"مدفوعة",date:today()}
+  ],
+  inventory:[
+    {id:"PRD-001",name:"لابتوب أعمال Pro 15",detail:"أجهزة إلكترونية",amount:4200,qty:24,status:"متوفر",date:today()},
+    {id:"PRD-002",name:"شاشة مكتبية 27 بوصة",detail:"أجهزة إلكترونية",amount:1150,qty:8,status:"مخزون منخفض",date:today()},
+    {id:"PRD-003",name:"كرسي مكتبي مريح",detail:"أثاث مكتبي",amount:680,qty:42,status:"متوفر",date:today()}
+  ],
+  customers:[
+    {id:"CUS-001",name:"شركة النخبة",detail:"contact@elite.example",amount:0,qty:0,status:"نشط",date:today()},
+    {id:"CUS-002",name:"مؤسسة الرواد",detail:"hello@rowad.example",amount:0,qty:0,status:"نشط",date:today()}
+  ],
+  expenses:[
+    {id:"EXP-001",name:"إيجار المكتب",detail:"إيجار وتشغيل",amount:8500,qty:1,status:"مسجل",date:today()},
+    {id:"EXP-002",name:"إنترنت واتصالات",detail:"مرافق",amount:1200,qty:1,status:"مسجل",date:today()}
+  ],
+  hr:[
+    {id:"EMP-001",name:"محمد العتيبي",detail:"الإدارة • مدير تنفيذي",amount:0,qty:1,status:"على رأس العمل",date:today()},
+    {id:"EMP-002",name:"سارة أحمد",detail:"المالية • محاسبة",amount:0,qty:1,status:"على رأس العمل",date:today()}
+  ]
+};
 const nav = [
-  { id: "overview", label: "نظرة عامة", icon: LayoutDashboard },
-  { id: "finance", label: "الحسابات والمالية", icon: Wallet },
-  { id: "sales", label: "المبيعات والفواتير", icon: ShoppingCart },
-  { id: "inventory", label: "المخزون والمنتجات", icon: Package },
-  { id: "hr", label: "الموارد البشرية", icon: Users },
-  { id: "reports", label: "التقارير والتحليلات", icon: ChartNoAxesCombined },
+  {id:"overview",label:"نظرة عامة",icon:LayoutDashboard},
+  {id:"sales",label:"المبيعات والفواتير",icon:ShoppingCart},
+  {id:"customers",label:"العملاء",icon:UserRound},
+  {id:"inventory",label:"المنتجات والمخزون",icon:Package},
+  {id:"expenses",label:"المصروفات",icon:Wallet},
+  {id:"hr",label:"الموظفون",icon:Users},
+  {id:"reports",label:"التقارير",icon:ChartNoAxesCombined}
 ];
-const invoices: Row[] = [
-  { id: "INV-0126", name: "شركة النخبة", amount: "12,500 ر.س", status: "مدفوعة" },
-  { id: "INV-0125", name: "مؤسسة الرواد", amount: "8,750 ر.س", status: "بانتظار الدفع" },
-  { id: "INV-0124", name: "شركة المسار", amount: "16,200 ر.س", status: "مدفوعة" },
-  { id: "INV-0123", name: "متجر البيان", amount: "4,800 ر.س", status: "متأخرة" },
-];
-const products = [
-  { sku:"PRD-001",name:"لابتوب أعمال Pro 15",category:"أجهزة إلكترونية",qty:24,price:"4,200 ر.س",status:"متوفر" },
-  { sku:"PRD-002",name:"شاشة مكتبية 27 بوصة",category:"أجهزة إلكترونية",qty:8,price:"1,150 ر.س",status:"مخزون منخفض" },
-  { sku:"PRD-003",name:"كرسي مكتبي مريح",category:"أثاث مكتبي",qty:42,price:"680 ر.س",status:"متوفر" },
-  { sku:"PRD-004",name:"طابعة ليزر متعددة",category:"معدات",qty:5,price:"950 ر.س",status:"مخزون منخفض" },
-  { sku:"PRD-005",name:"لوحة مفاتيح لاسلكية",category:"ملحقات",qty:110,price:"120 ر.س",status:"متوفر" },
-];
-const employees = [
-  { id:"EMP-001",name:"محمد العتيبي",dept:"الإدارة",role:"المدير التنفيذي",status:"حاضر" },
-  { id:"EMP-002",name:"سارة أحمد",dept:"المالية",role:"مديرة الحسابات",status:"حاضر" },
-  { id:"EMP-003",name:"خالد الحربي",dept:"المبيعات",role:"مسؤول مبيعات",status:"حاضر" },
-  { id:"EMP-004",name:"نورة القحطاني",dept:"الموارد البشرية",role:"أخصائية موارد بشرية",status:"في إجازة" },
-  { id:"EMP-005",name:"عبدالله سالم",dept:"المخزون",role:"أمين مستودع",status:"حاضر" },
-  { id:"EMP-006",name:"ريم محمد",dept:"المالية",role:"محاسبة",status:"حاضر" },
-  { id:"EMP-007",name:"فهد الدوسري",dept:"المبيعات",role:"مدير المبيعات",status:"حاضر" },
-];
-const chartData = [
-  {month:"يونيو",revenue:190,expense:120},{month:"يوليو",revenue:225,expense:135},{month:"أغسطس",revenue:210,expense:145},{month:"سبتمبر",revenue:260,expense:155},{month:"أكتوبر",revenue:265,expense:175},{month:"نوفمبر",revenue:295,expense:185},
-];
-const titles: Record<string,string> = { overview:"نظرة عامة",finance:"الحسابات والمالية",sales:"المبيعات والفواتير",inventory:"المخزون والمنتجات",hr:"الموارد البشرية",reports:"التقارير والتحليلات" };
-const subtitles: Record<string,string> = { overview:"كل ما تحتاجه لاتخاذ قرارات أفضل، في مكان واحد.",finance:"تابع التدفقات النقدية والإيرادات والمصروفات.",sales:"أدر فواتيرك ومبيعاتك وعلاقاتك مع العملاء.",inventory:"تحكم في منتجاتك وكميات المخزون والمستودعات.",hr:"فريقك أولاً. تابع الموظفين والحضور والرواتب بسهولة.",reports:"رؤية أوضح لأداء أعمالك واتجاهاتها." };
-function Status({value}:{value:string}) { const cls = value==="مدفوعة"||value==="حاضر"||value==="متوفر" ? "paid" : value==="متأخرة" ? "late" : "pending"; return <span className={"status "+cls}>{value}</span>; }
-export default function Home() {
-  const [page,setPage] = useState("overview");
-  const [query,setQuery] = useState("");
-  const [modal,setModal] = useState(false);
-  const [mobileOpen,setMobileOpen] = useState(false);
-  const [toast,setToast] = useState("");
-  const [tab,setTab] = useState("all");
-  const [newName,setNewName] = useState("");
-  const [newAmount,setNewAmount] = useState("");
-  const filteredInvoices = useMemo(()=>invoices.filter(r=>(r.id+" "+r.name+" "+r.status).toLowerCase().includes(query.toLowerCase())),[query]);
-  const filteredProducts = useMemo(()=>products.filter(r=>(r.sku+" "+r.name+" "+r.category).toLowerCase().includes(query.toLowerCase())),[query]);
-  const filteredEmployees = useMemo(()=>employees.filter(r=>(r.id+" "+r.name+" "+r.dept).toLowerCase().includes(query.toLowerCase()) && (tab==="all" || (tab==="present" ? r.status==="حاضر" : r.status==="في إجازة"))),[query,tab]);
-  const notify = (message:string)=>{setToast(message);window.setTimeout(()=>setToast(""),2600);};
-  const openCreate = ()=>{setNewName("");setNewAmount("");setModal(true);};
-  const submitCreate = (e:React.FormEvent)=>{e.preventDefault();setModal(false);notify(newName ? "تم تسجيل "+newName+" بنجاح (بيانات تجريبية)." : "تم إنشاء العنصر بنجاح (بيانات تجريبية).");};
-  const metrics = page==="hr" ? [["إجمالي الموظفين","48","↑ موظفان هذا الشهر"],["حاضرون اليوم","44","نسبة الحضور 91.7%"],["في إجازة","04","3 سنوية · 1 مرضية"],["رواتب الشهر","96,000","موعد الصرف 28 نوفمبر"]] : page==="inventory" ? [["إجمالي المنتجات","1,248","في 3 مستودعات"],["قيمة المخزون","186,400","ر.س"],["مخزون منخفض","12","تحتاج إعادة طلب"],["طلبات التوريد","08","3 شحنات قادمة"]] : page==="sales" ? [["إجمالي المبيعات","248,500","↑ 12.8% عن الشهر السابق"],["الفواتير","126","خلال هذا الشهر"],["بانتظار التحصيل","8","34,000 ر.س مستحق"],["متوسط الفاتورة","1,972","ر.س"]] : [["إجمالي المبيعات","248,500","↑ 12.8% عن الشهر السابق"],["صافي الأرباح","68,240","↑ 8.2% عن الشهر السابق"],["قيمة المخزون","186,400","1,248 منتج في 3 مستودعات"],["الموظفون النشطون","48","44 حاضر اليوم · 4 في إجازة"]];
-  return <div className="app-shell">
-    <aside className={"sidebar "+(mobileOpen?"open":"")}>
-      <div className="brand"><strong>مدار</strong><span>نظام إدارة الأعمال</span></div>
-      <div className="company"><b>شركة الأفق للتجارة</b><small>المقر الرئيسي　⌄</small></div>
-      <div className="nav-label">مساحة العمل</div>
-      <nav className="nav-list">{nav.map(item=>{const Icon=item.icon;return <button key={item.id} className={"nav-item "+(page===item.id?"active":"")} onClick={()=>{setPage(item.id);setMobileOpen(false);setQuery("");}}><Icon/><span>{item.label}</span></button>})}</nav>
-      <div className="sidebar-bottom"><div className="support"><b>نحن هنا لمساعدتك</b><p>مركز المساعدة والدعم</p><a href="mailto:support@modar.example">تواصل معنا ←</a></div><button className="nav-item" onClick={()=>notify("الإعدادات ستكون متاحة قريباً.")}><Settings/><span>الإعدادات</span></button><div className="sidebar-foot">مدار ERP　•　الإصدار 2.0</div></div>
-    </aside>
-    <main className="main">
-      <header className="topbar"><div style={{display:"flex",alignItems:"center",gap:12}}><button className="icon-btn mobile-menu" onClick={()=>setMobileOpen(!mobileOpen)} aria-label="القائمة">{mobileOpen?<X/>:<Menu/>}</button><span className="crumb">مساحة العمل　/　{titles[page]}</span></div><div className="top-actions"><label className="search"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="ابحث عن فاتورة، منتج، أو موظف..."/></label><button className="icon-btn" onClick={()=>notify("لا توجد إشعارات جديدة")} aria-label="الإشعارات"><Bell size={19}/></button><div className="profile"><b>أحمد محمد</b><small>مدير النظام　⌄</small></div></div></header>
-      <div className="content">
-        <div className="page-heading"><div><h1>{titles[page]}</h1><p>{subtitles[page]}</p></div><div className="actions"><button className="btn" onClick={()=>notify("الفترة المحددة: نوفمبر 2026")}>نوفمبر 2026　<ChevronDown size={14}/></button><button className="btn btn-primary" onClick={openCreate}><Plus size={17}/>{page==="hr"?"إضافة موظف":page==="inventory"?"إضافة منتج":page==="sales"?"إنشاء فاتورة":"إنشاء جديد"}</button></div></div>
-        <section className="metrics">{metrics.map(([label,value,note])=><article className="metric" key={label}><div className="metric-label">{label}</div><div className="metric-value">{value}</div><div className={"metric-note "+(note.includes("↑")?"":"neutral")}>{note}</div></article>)}</section>
-        {page==="overview"||page==="finance"||page==="reports" ? <><section className="dashboard-grid"><article className="panel"><div className="panel-head"><div><h2>هدف المبيعات الشهري</h2><p>أنت على الطريق الصحيح</p></div></div><div className="target-wrap"><div className="target-ring"><div className="target-number"><b>83%</b><span>من الهدف الشهري</span></div></div></div><div className="target-foot">248,500 / 300,000 ر.س</div></article><article className="panel"><div className="panel-head"><div><h2>{page==="finance"?"التدفقات النقدية":page==="reports"?"الأداء المالي":"الإيرادات والمصروفات"}</h2><p>الأداء المالي خلال آخر 6 أشهر</p></div><div className="chart-legend"><span><i className="legend-dot" style={{background:"#087f70"}}/>الإيرادات</span><span><i className="legend-dot" style={{background:"#9cb7be"}}/>المصروفات</span></div></div><div style={{height:230,direction:"ltr"}}><ResponsiveContainer width="100%" height="100%"><AreaChart data={chartData} margin={{top:8,right:8,left:-18,bottom:0}}><defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#087f70" stopOpacity={.2}/><stop offset="95%" stopColor="#087f70" stopOpacity={0}/></linearGradient></defs><CartesianGrid stroke="#e8eef0" vertical={false}/><XAxis dataKey="month" tick={{fontSize:11,fill:"#64787d"}} axisLine={false} tickLine={false}/><YAxis tick={{fontSize:10,fill:"#64787d"}} axisLine={false} tickLine={false}/><Tooltip/><Area type="monotone" dataKey="revenue" name="الإيرادات" stroke="#087f70" strokeWidth={2.5} fill="url(#rev)"/><Area type="monotone" dataKey="expense" name="المصروفات" stroke="#9cb7be" strokeWidth={2} fill="transparent"/></AreaChart></ResponsiveContainer></div></article></section><section className="lower-grid"><article className="panel"><div className="panel-head"><h2>أحدث الفواتير</h2><button className="btn" onClick={()=>setPage("sales")}>عرض الكل ←</button></div><div className="table-wrap"><table><thead><tr><th>رقم الفاتورة</th><th>العميل</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>{filteredInvoices.map(r=><tr key={r.id}><td>{r.id}</td><td>{r.name}</td><td>{r.amount}</td><td><Status value={r.status}/></td></tr>)}</tbody></table>{filteredInvoices.length===0&&<div className="empty">لا توجد نتائج مطابقة</div>}</div></article><article className="panel"><div className="panel-head"><h2>يحتاج انتباهك</h2></div><div className="alert-item"><b>12 منتجاً بمخزون منخفض</b><span>راجع المنتجات وأعد الطلب</span></div><div className="alert-item"><b>8 فواتير بانتظار التحصيل</b><span>إجمالي المستحقات 34,000 ر.س</span></div><div className="alert-item"><b>3 طلبات إجازة جديدة</b><span>طلبات تنتظر موافقتك</span></div></article></section></> : null}
-        {page==="sales"&&<section className="panel section-panel"><div className="panel-head"><div><h2>الفواتير</h2><p>إدارة ومتابعة فواتير العملاء</p></div><button className="btn" onClick={()=>notify("تم تجهيز ملف التصدير التجريبي.")}><Download size={15}/> تصدير</button></div><div className="table-wrap page-table"><table><thead><tr><th>رقم الفاتورة</th><th>العميل</th><th>الإجمالي</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>{filteredInvoices.map(r=><tr key={r.id}><td>{r.id}</td><td>{r.name}</td><td>{r.amount}</td><td><Status value={r.status}/></td><td><button className="icon-btn" onClick={()=>notify("تفاصيل "+r.id)}><MoreHorizontal/></button></td></tr>)}</tbody></table></div></section>}
-        {page==="inventory"&&<section className="panel section-panel"><div className="panel-head"><div><h2>قائمة المنتجات</h2><p>تابع كميات المنتجات وحالة المخزون</p></div><button className="btn" onClick={()=>notify("تم تجهيز ملف المنتجات.")}><Download size={15}/> تصدير</button></div><div className="table-wrap page-table"><table><thead><tr><th>رمز المنتج</th><th>اسم المنتج</th><th>التصنيف</th><th>الكمية</th><th>السعر</th><th>الحالة</th></tr></thead><tbody>{filteredProducts.map(r=><tr key={r.sku}><td>{r.sku}</td><td>{r.name}</td><td>{r.category}</td><td>{r.qty}</td><td>{r.price}</td><td><Status value={r.status}/></td></tr>)}</tbody></table></div></section>}
-        {page==="hr"&&<section className="panel section-panel"><div className="panel-head"><div><h2>دليل الموظفين</h2><p>جميع الموظفين ({employees.length})</p></div><button className="btn" onClick={()=>notify("تم تجهيز ملف الموظفين.")}><Download size={15}/> تصدير</button></div><div className="tabs"><button className={"tab "+(tab==="all"?"active":"")} onClick={()=>setTab("all")}>جميع الموظفين (48)</button><button className={"tab "+(tab==="present"?"active":"")} onClick={()=>setTab("present")}>حاضرون (44)</button><button className={"tab "+(tab==="leave"?"active":"")} onClick={()=>setTab("leave")}>في إجازة (4)</button></div><div className="table-wrap page-table"><table><thead><tr><th>الرقم الوظيفي</th><th>اسم الموظف</th><th>القسم</th><th>المسمى الوظيفي</th><th>الحالة</th><th></th></tr></thead><tbody>{filteredEmployees.map(r=><tr key={r.id}><td>{r.id}</td><td>{r.name}</td><td>{r.dept}</td><td>{r.role}</td><td><Status value={r.status}/></td><td><button className="icon-btn" onClick={()=>notify("ملف "+r.name)}><MoreHorizontal/></button></td></tr>)}</tbody></table></div></section>}
-        <div style={{display:"flex",justifyContent:"space-between",color:"#819196",fontSize:11,marginTop:18}}><span>مدار ERP / شركة الأفق للتجارة</span><span>بيانات توضيحية • آخر تحديث: اليوم، 10:30 ص</span></div>
-      </div>
-    </main>
-    {modal&&<div className="modal-backdrop" onClick={()=>setModal(false)}><div className="modal" onClick={e=>e.stopPropagation()}><h2>{page==="hr"?"إضافة موظف":page==="inventory"?"إضافة منتج":page==="sales"?"إنشاء فاتورة":"إنشاء عنصر جديد"}</h2><form onSubmit={submitCreate}><label>الاسم أو الوصف<input autoFocus required value={newName} onChange={e=>setNewName(e.target.value)} placeholder="اكتب الاسم هنا"/></label><label>القيمة (اختياري)<input value={newAmount} onChange={e=>setNewAmount(e.target.value)} placeholder="0.00"/></label><div className="modal-actions"><button className="btn btn-primary" type="submit">حفظ</button><button className="btn" type="button" onClick={()=>setModal(false)}>إلغاء</button></div></form></div></div>}
-    {toast&&<div className="toast" role="status">{toast}</div>}
-  </div>;
+const titles:Record<string,string>={overview:"نظرة عامة",sales:"المبيعات والفواتير",customers:"العملاء",inventory:"المنتجات والمخزون",expenses:"المصروفات",hr:"الموظفون",reports:"التقارير"};
+const labels:Record<Kind,{singular:string;id:string;detail:string;amount:string;qty:string}> = {
+ sales:{singular:"فاتورة",id:"رقم الفاتورة",detail:"العميل / البيان",amount:"الإجمالي",qty:"الكمية"},
+ inventory:{singular:"منتج",id:"كود المنتج",detail:"التصنيف",amount:"سعر الوحدة",qty:"الكمية"},
+ customers:{singular:"عميل",id:"كود العميل",detail:"البريد أو الهاتف",amount:"الرصيد",qty:"—"},
+ expenses:{singular:"مصروف",id:"رقم المصروف",detail:"التصنيف / البيان",amount:"القيمة",qty:"—"},
+ hr:{singular:"موظف",id:"الرقم الوظيفي",detail:"القسم / الوظيفة",amount:"الراتب",qty:"—"}
+};
+const money=(n:number)=>new Intl.NumberFormat("ar-EG",{style:"currency",currency:"EGP",maximumFractionDigits:2}).format(n||0);
+const makeId=(kind:Kind)=>({sales:"INV",inventory:"PRD",customers:"CUS",expenses:"EXP",hr:"EMP"}[kind])+"-"+Date.now().toString().slice(-6);
+function downloadCsv(filename:string, rows:Record<string,string|number>[]) {
+ const keys=Object.keys(rows[0]||{});
+ const csv=[keys.join(","),...rows.map(r=>keys.map(k=>'"'+String(r[k]??"").replace(/"/g,'""')+'"').join(","))].join("\n");
+ const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+ const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
+}
+function Status({value}:{value:string}) {const cls=["مدفوعة","نشط","متوفر","مسجل","على رأس العمل"].includes(value)?"paid":value==="متأخرة"?"late":"pending";return <span className={"status "+cls}>{value}</span>;}
+export default function Home(){
+ const [page,setPage]=useState("overview");
+ const [store,setStore]=useState<Store>(seed);
+ const [ready,setReady]=useState(false);
+ const [query,setQuery]=useState("");
+ const [mobileOpen,setMobileOpen]=useState(false);
+ const [toast,setToast]=useState("");
+ const [modal,setModal]=useState(false);
+ const [editing,setEditing]=useState<string|null>(null);
+ const [selected,setSelected]=useState<RecordItem|null>(null);
+ const [form,setForm]=useState({name:"",detail:"",amount:"",qty:"1",status:"مدفوعة",date:today()});
+ const [filter,setFilter]=useState("الكل");
+ useEffect(()=>{try{const saved=localStorage.getItem(STORAGE_KEY);if(saved)setStore(JSON.parse(saved) as Store);}catch{}setReady(true);},[]);
+ useEffect(()=>{if(ready)localStorage.setItem(STORAGE_KEY,JSON.stringify(store));},[store,ready]);
+ const notify=(s:string)=>{setToast(s);window.setTimeout(()=>setToast(""),2600);};
+ const kind:Kind|undefined=["sales","inventory","customers","expenses","hr"].includes(page)?page as Kind:undefined;
+ const rows=useMemo(()=>kind?(store[kind]||[]).filter(r=>(r.id+" "+r.name+" "+r.detail+" "+r.status).toLowerCase().includes(query.toLowerCase())&&(filter==="الكل"||r.status===filter)):[],[kind,store,query,filter]);
+ const totals=useMemo(()=>({sales:store.sales.reduce((s,r)=>s+r.amount,0),expenses:store.expenses.reduce((s,r)=>s+r.amount,0),stock:store.inventory.reduce((s,r)=>s+r.amount*r.qty,0),low:store.inventory.filter(r=>r.qty<=10).length}),[store]);
+ const openCreate=(item?:RecordItem)=>{setEditing(item?.id||null);setForm(item?{name:item.name,detail:item.detail,amount:String(item.amount),qty:String(item.qty||1),status:item.status,date:item.date}:{name:"",detail:"",amount:"",qty:"1",status:kind==="sales"?"بانتظار الدفع":kind==="inventory"?"متوفر":kind==="customers"?"نشط":kind==="expenses"?"مسجل":"على رأس العمل",date:today()});setModal(true);};
+ const saveRecord=(e:React.FormEvent)=>{e.preventDefault();if(!kind)return;const item:RecordItem={id:editing||makeId(kind),name:form.name.trim(),detail:form.detail.trim(),amount:Number(form.amount)||0,qty:Number(form.qty)||1,status:form.status,date:form.date};setStore(old=>({...old,[kind]:editing?old[kind].map(r=>r.id===editing?item:r):[item,...old[kind]]}));setModal(false);notify(editing?"تم تحديث البيانات وحفظها":"تمت الإضافة وحفظ البيانات");};
+ const removeRecord=(id:string)=>{if(!kind||!confirm("هل أنت متأكد من حذف هذا السجل؟"))return;setStore(old=>({...old,[kind]:old[kind].filter(r=>r.id!==id)}));notify("تم حذف السجل");};
+ const exportCurrent=()=>{if(!kind)return;downloadCsv(titles[page]+".csv",rows.map(r=>({code:r.id,name:r.name,details:r.detail,amount:r.amount,quantity:r.qty,status:r.status,date:r.date})));notify("تم تصدير الملف بصيغة CSV المتوافقة مع Excel");};
+ const printInvoice=(r:RecordItem)=>{setSelected(r);window.setTimeout(()=>window.print(),150);};
+ const createInvoice=()=>{setPage("sales");setTimeout(()=>openCreate(),0);};
+ const metricCards=[{label:"إجمالي المبيعات",value:money(totals.sales),note:store.sales.length+" فاتورة مسجلة",icon:TrendingUp},{label:"المصروفات",value:money(totals.expenses),note:store.expenses.length+" مصروف مسجل",icon:Wallet},{label:"قيمة المخزون",value:money(totals.stock),note:store.inventory.length+" منتج",icon:Boxes},{label:"العملاء",value:String(store.customers.length),note:"عميل مسجل",icon:Users}];
+ return <div className="app-shell">
+  <aside className={"sidebar "+(mobileOpen?"open":"")}><div className="brand"><strong>مدار</strong><span>نظام إدارة الأعمال</span></div><div className="company"><b>منشأتي</b><small>المساحة الرئيسية　⌄</small></div><div className="nav-label">إدارة المنشأة</div><nav className="nav-list">{nav.map(item=>{const Icon=item.icon;return <button key={item.id} className={"nav-item "+(page===item.id?"active":"")} onClick={()=>{setPage(item.id);setMobileOpen(false);setQuery("");setFilter("الكل");}}><Icon/><span>{item.label}</span></button>})}</nav><div className="sidebar-bottom"><div className="support"><b>بياناتك تحت سيطرتك</b><p>تُحفظ محلياً على هذا المتصفح.</p><a href="mailto:support@example.com">الدعم الفني ←</a></div><button className="nav-item" onClick={()=>{if(confirm("سيتم استعادة بيانات العرض التجريبية وحذف بياناتك الحالية من هذا المتصفح. متابعة؟"))setStore(seed);}}><Settings/><span>استعادة بيانات العرض</span></button><div className="sidebar-foot">مدار ERP • نسخة تجريبية تفاعلية</div></div></aside>
+  <main className="main"><header className="topbar"><div style={{display:"flex",alignItems:"center",gap:12}}><button className="icon-btn mobile-menu" onClick={()=>setMobileOpen(!mobileOpen)} aria-label="القائمة">{mobileOpen?<X/>:<Menu/>}</button><span className="crumb">إدارة المنشأة　/　{titles[page]}</span></div><div className="top-actions"><label className="search"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="ابحث في السجلات الحالية..."/></label><button className="icon-btn" onClick={()=>notify("كل شيء محدث")} aria-label="الإشعارات"><Bell size={19}/></button><div className="profile"><b>مدير المنشأة</b><small>صلاحيات كاملة</small></div></div></header>
+  <div className="content"><div className="page-heading"><div><h1>{titles[page]}</h1><p>{page==="overview"?"تابع أعمالك وأرقام منشأتك من مكان واحد.":page==="reports"?"تقارير مبنية على البيانات المسجلة في النظام.":"أضف وعدّل وتابع بياناتك بسهولة."}</p></div><div className="actions">{kind&&<button className="btn" onClick={exportCurrent}><Download size={15}/> تصدير Excel / CSV</button>}{kind&&<button className="btn btn-primary" onClick={()=>openCreate()}><Plus size={17}/> إضافة {labels[kind].singular}</button>}{page==="overview"&&<button className="btn btn-primary" onClick={createInvoice}><Plus size={17}/> إنشاء فاتورة</button>}</div></div>
+  {page==="overview"&&<><section className="metrics">{metricCards.map(m=>{const Icon=m.icon;return <article className="metric" key={m.label}><div className="metric-label">{m.label}</div><div className="metric-value">{m.value}</div><div className="metric-note neutral">{m.note}</div><Icon size={18} color="#087f70"/></article>})}</section><section className="lower-grid"><article className="panel"><div className="panel-head"><div><h2>آخر الفواتير</h2><p>أحدث عمليات البيع المسجلة</p></div><button className="btn" onClick={()=>setPage("sales")}>عرض الكل</button></div><div className="table-wrap"><table><thead><tr><th>رقم الفاتورة</th><th>العميل</th><th>الإجمالي</th><th>الحالة</th><th></th></tr></thead><tbody>{store.sales.slice(0,6).map(r=><tr key={r.id}><td>{r.id}</td><td>{r.name}</td><td>{money(r.amount)}</td><td><Status value={r.status}/></td><td><button className="icon-btn" onClick={()=>printInvoice(r)} title="طباعة الفاتورة"><Printer size={16}/></button></td></tr>)}</tbody></table></div></article><article className="panel"><div className="panel-head"><h2>تنبيهات المخزون</h2></div>{store.inventory.filter(r=>r.qty<=10).length?store.inventory.filter(r=>r.qty<=10).map(r=><div className="alert-item" key={r.id}><b>{r.name}</b><span>المتبقي: {r.qty} — راجع إعادة الطلب</span></div>):<div className="empty">لا توجد منتجات منخفضة المخزون</div>}</article></section><section className="metrics" style={{marginTop:18}}><article className="panel"><h2>اختصارات سريعة</h2><div className="actions" style={{marginTop:12,flexWrap:"wrap"}}><button className="btn" onClick={()=>setPage("customers")}>إدارة العملاء</button><button className="btn" onClick={()=>setPage("inventory")}>إدارة المنتجات</button><button className="btn" onClick={()=>setPage("expenses")}>تسجيل مصروف</button><button className="btn" onClick={()=>setPage("reports")}>عرض التقارير</button></div></article></section></>}
+  {kind&&<section className="panel section-panel"><div className="panel-head"><div><h2>{labels[kind].singular==="فاتورة"?"سجل الفواتير":"سجل "+(titles[page])}</h2><p>{rows.length} سجل ظاهر • التغييرات تحفظ تلقائياً على هذا الجهاز</p></div><div className="actions"><select className="btn" value={filter} onChange={e=>setFilter(e.target.value)}><option>الكل</option>{(kind==="sales"?["مدفوعة","بانتظار الدفع","متأخرة"]:kind==="inventory"?["متوفر","مخزون منخفض","نفد"]:kind==="customers"?["نشط","غير نشط"]:kind==="expenses"?["مسجل","معلق"]:["على رأس العمل","إجازة"]).map(s=><option key={s}>{s}</option>)}</select></div></div><div className="table-wrap page-table"><table><thead><tr><th>{labels[kind].id}</th><th>الاسم</th><th>{labels[kind].detail}</th><th>{labels[kind].amount} (ج.م)</th><th>{labels[kind].qty}</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody>{rows.map(r=><tr key={r.id}><td>{r.id}</td><td>{r.name}</td><td>{r.detail}</td><td>{money(r.amount)}</td><td>{r.qty}</td><td><Status value={r.status}/></td><td>{r.date}</td><td><div style={{display:"flex",gap:4}}>{kind==="sales"&&<button className="icon-btn" title="طباعة" onClick={()=>printInvoice(r)}><Printer size={16}/></button>}<button className="icon-btn" title="تعديل" onClick={()=>openCreate(r)}><Pencil size={16}/></button><button className="icon-btn" title="حذف" onClick={()=>removeRecord(r.id)}><Trash2 size={16}/></button></div></td></tr>)}</tbody></table>{rows.length===0&&<div className="empty">لا توجد سجلات. ابدأ بإضافة سجل جديد.</div>}</div></section>}
+  {page==="reports"&&<><section className="metrics">{metricCards.map(m=><article className="metric" key={m.label}><div className="metric-label">{m.label}</div><div className="metric-value">{m.value}</div><div className="metric-note neutral">{m.note}</div></article>)}</section><section className="panel section-panel"><div className="panel-head"><div><h2>ملخص الأداء المالي</h2><p>حسب البيانات المسجلة حالياً</p></div><button className="btn btn-primary" onClick={()=>downloadCsv("modar-financial-report.csv",[{metric:"المبيعات",value:totals.sales},{metric:"المصروفات",value:totals.expenses},{metric:"صافي الفرق",value:totals.sales-totals.expenses},{metric:"قيمة المخزون",value:totals.stock}])}><Download size={15}/> تصدير التقرير</button></div><div className="report-grid"><div><span>إجمالي المبيعات</span><b>{money(totals.sales)}</b></div><div><span>إجمالي المصروفات</span><b>{money(totals.expenses)}</b></div><div><span>صافي الفرق (قبل الضرائب)</span><b>{money(totals.sales-totals.expenses)}</b></div><div><span>قيمة المخزون الحالية</span><b>{money(totals.stock)}</b></div></div></section></>}
+  <div style={{display:"flex",justifyContent:"space-between",color:"#819196",fontSize:11,marginTop:18}}><span>مدار ERP • نظام إدارة المنشأة</span><span>{ready?"الحفظ التلقائي مفعل":"جارٍ تحميل البيانات..."}</span></div></div></main>
+  {modal&&kind&&<div className="modal-backdrop" onClick={()=>setModal(false)}><div className="modal" onClick={e=>e.stopPropagation()}><h2>{editing?"تعديل "+labels[kind].singular:"إضافة "+labels[kind].singular}</h2><form onSubmit={saveRecord}><label>الاسم<input autoFocus required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="اكتب الاسم"/></label><label>{labels[kind].detail}<input value={form.detail} onChange={e=>setForm({...form,detail:e.target.value})} placeholder="بيانات إضافية"/></label>{kind!=="customers"&&<label>{labels[kind].amount} بالجنيه المصري<input type="number" min="0" step="0.01" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})}/></label>}{["inventory","hr"].includes(kind)&&<label>الكمية / العدد<input type="number" min="0" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})}/></label>}<label>الحالة<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>{(kind==="sales"?["مدفوعة","بانتظار الدفع","متأخرة"]:kind==="inventory"?["متوفر","مخزون منخفض","نفد"]:kind==="customers"?["نشط","غير نشط"]:kind==="expenses"?["مسجل","معلق"]:["على رأس العمل","إجازة"]).map(s=><option key={s}>{s}</option>)}</select></label><label>التاريخ<input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></label><div className="modal-actions"><button className="btn btn-primary" type="submit"><Save size={15}/> حفظ</button><button className="btn" type="button" onClick={()=>setModal(false)}>إلغاء</button></div></form></div></div>}
+  {selected&&<div className="print-only invoice-paper"><h1>مدار ERP</h1><h2>فاتورة مبيعات</h2><p>رقم الفاتورة: {selected.id}</p><p>التاريخ: {selected.date}</p><hr/><p>العميل: {selected.name}</p><p>البيان: {selected.detail}</p><h2>الإجمالي: {money(selected.amount)}</h2><p>الحالة: {selected.status}</p><p>شكراً لتعاملكم معنا</p><button className="btn no-print" onClick={()=>setSelected(null)}>إغلاق</button></div>}
+  {toast&&<div className="toast" role="status">{toast}</div>}
+ </div>;
 }
